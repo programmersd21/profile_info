@@ -1,9 +1,10 @@
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { X, Activity, AlertCircle, Info, Coffee, Clock, Zap } from 'lucide-react';
+import { X, Activity, AlertCircle, Info, Coffee, Clock, Zap, Loader2 } from 'lucide-react';
 import { GitHubRepo } from '../types';
 import { fetchRepoParticipation } from '../services/githubService';
+import lottie from 'lottie-web';
 
 interface RepoStatsModalProps {
   repo: GitHubRepo;
@@ -14,6 +15,7 @@ const RepoStatsModal: React.FC<RepoStatsModalProps> = ({ repo, onClose }) => {
   const [data, setData] = useState<{ all: number[], owner: number[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
+  const lottieContainer = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -65,149 +67,153 @@ const RepoStatsModal: React.FC<RepoStatsModalProps> = ({ repo, onClose }) => {
     };
   }, [data]);
 
+  // Load Lottie for Empty State
+  useEffect(() => {
+    if (!loading && !hasActivity && lottieContainer.current) {
+        // Use the specific Lottie URL requested (Steaming Coffee/Beans vibe)
+        const anim = lottie.loadAnimation({
+            container: lottieContainer.current,
+            renderer: 'svg',
+            loop: true,
+            autoplay: true,
+            path: 'https://lottie.host/8c158572-8848-4394-811c-66885834863e/5A2Y7t3f00.json' 
+        });
+        return () => anim.destroy();
+    }
+  }, [loading, hasActivity]);
+
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-6">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
+      {/* Heavy Backdrop Blur for Focus */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+        animate={{ opacity: 1, backdropFilter: "blur(20px)" }}
+        exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
         onClick={onClose}
-        className="absolute inset-0 bg-coffee-950/90 backdrop-blur-xl"
+        className="absolute inset-0 bg-coffee-950/30 dark:bg-black/60 z-0 transition-all duration-700"
       />
       
       <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 30 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 30 }}
-        className="relative w-full max-w-[95%] sm:max-w-2xl bg-white dark:bg-coffee-900 rounded-[1.5rem] sm:rounded-[3rem] shadow-[0_35px_100px_-15px_rgba(0,0,0,0.6)] overflow-hidden border border-coffee-200/50 dark:border-coffee-700/50 flex flex-col max-h-[85vh] sm:max-h-[90vh]"
+        initial={{ opacity: 0, scale: 0.9, y: 30, rotateX: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 30, rotateX: 10 }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        className="relative w-full max-w-[95%] sm:max-w-2xl liquid-glass-high rounded-[2.5rem] sm:rounded-[3.5rem] overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[90vh] z-10"
+        style={{ perspective: '1000px' }}
       >
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-coffee-300 via-coffee-600 to-coffee-800 z-10" />
+        {/* Top Highlight Stripe */}
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-white/0 via-white/80 to-white/0 opacity-50 z-20 mix-blend-overlay" />
         
-        <div className="overflow-y-auto overflow-x-hidden custom-scrollbar p-5 sm:p-10 flex flex-col h-full">
-            <div className="flex justify-between items-start mb-6 sm:mb-8 shrink-0">
+        <div className="overflow-y-auto overflow-x-hidden custom-scrollbar p-6 sm:p-12 flex flex-col h-full relative z-20">
+            <div className="flex justify-between items-start mb-8 shrink-0">
                 <div className="pr-4">
-                    <div className="flex items-center gap-2 text-coffee-500 dark:text-coffee-400 mb-1 sm:mb-2">
-                        <Activity size={14} className="animate-pulse sm:w-4 sm:h-4" />
-                        <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em]">Codebase Chemistry</span>
+                    <div className="flex items-center gap-2 text-coffee-600 dark:text-coffee-300 mb-2">
+                        <Activity size={16} className="animate-pulse text-emerald-500" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-80">Extraction Analysis</span>
                     </div>
-                    <h3 className="text-xl sm:text-4xl font-display font-black text-coffee-950 dark:text-coffee-50 tracking-tighter break-words leading-tight">
+                    <h3 className="text-2xl sm:text-4xl font-serif font-black text-coffee-950 dark:text-white tracking-tighter leading-none italic">
                       {repo.name}
                     </h3>
                 </div>
                 <button 
                     onClick={onClose}
-                    className="p-2 sm:p-3 rounded-full bg-coffee-50 dark:bg-coffee-800/50 text-coffee-400 hover:text-coffee-950 dark:hover:text-white transition-all active:scale-75 flex-shrink-0"
+                    className="w-10 h-10 rounded-full bg-coffee-950/5 dark:bg-white/10 text-coffee-950 dark:text-white hover:bg-coffee-950 hover:text-white dark:hover:bg-white dark:hover:text-coffee-950 transition-all active:scale-90 flex items-center justify-center flex-shrink-0 backdrop-blur-md"
                 >
-                    <X size={18} className="sm:w-5 sm:h-5" />
+                    <X size={20} />
                 </button>
             </div>
 
-            <div className="min-h-[220px] sm:min-h-[300px] flex flex-col bg-coffee-50/50 dark:bg-black/30 rounded-2xl sm:rounded-[2.5rem] border border-coffee-100 dark:border-coffee-800/50 p-4 sm:p-10 relative shrink-0">
+            <div className="min-h-[220px] sm:min-h-[300px] flex flex-col liquid-glass rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-10 relative shrink-0 shadow-inner">
                 {loading ? (
-                    <div className="flex-1 flex flex-col items-center justify-center gap-5">
+                    <div className="flex-1 flex flex-col items-center justify-center gap-6">
                         <div className="relative">
-                          <div className="w-10 h-10 sm:w-14 sm:h-14 border-4 border-coffee-100 dark:border-coffee-800 border-t-coffee-700 rounded-full animate-spin" />
+                          <Loader2 size={48} className="animate-spin text-coffee-400" />
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <Coffee size={12} className="text-coffee-700 dark:text-coffee-400 sm:w-4 sm:h-4" />
+                             <div className="w-2 h-2 bg-coffee-600 rounded-full animate-ping" />
                           </div>
                         </div>
-                        <div className="flex flex-col items-center gap-1">
-                            <span className="text-[9px] font-black text-coffee-400 uppercase tracking-[0.4em] animate-pulse">Running Lab Tests...</span>
-                            {retryCount > 0 && <span className="text-[8px] text-coffee-300">Calibrating... ({retryCount}/3)</span>}
-                        </div>
+                        <span className="text-[10px] font-black text-coffee-400 uppercase tracking-[0.4em] animate-pulse">Brewing Data...</span>
                     </div>
                 ) : hasActivity ? (
                     <div className="w-full h-full flex flex-col justify-end">
-                        {/* Bar Graph Container with Fixed Height to prevent collapse */}
-                        <div className="w-full h-[120px] sm:h-48 flex items-end justify-between gap-[2px] sm:gap-[3px] pt-2 shrink-0">
+                        {/* Bar Graph */}
+                        <div className="w-full h-[140px] sm:h-56 flex items-end justify-between gap-[2px] sm:gap-[3px] pt-4 shrink-0">
                             {activityArray.map((count, i) => {
                                 const heightPercent = maxCommit > 0 ? (count / maxCommit) * 100 : 0;
-                                const visualHeight = count > 0 ? Math.max(heightPercent, 8) : 4;
+                                const visualHeight = count > 0 ? Math.max(heightPercent, 5) : 3;
                                 
                                 return (
                                     <div key={i} className="flex-1 h-full flex flex-col justify-end group relative">
-                                        <div className="w-full h-full flex flex-col justify-end">
-                                            <motion.div
-                                                initial={{ height: 0 }}
-                                                animate={{ height: `${visualHeight}%` }}
-                                                transition={{ duration: 0.8, ease: "easeOut", delay: i * 0.015 }}
-                                                className={`w-full rounded-[1px] sm:rounded-[2px] transition-all duration-300 relative ${
-                                                count > 0 
-                                                ? 'bg-gradient-to-t from-coffee-800 via-coffee-600 to-coffee-400 dark:from-coffee-500 dark:via-coffee-400 dark:to-coffee-200' 
-                                                : 'bg-coffee-200/50 dark:bg-coffee-800/30'
-                                                }`}
-                                            >
-                                                {count > 0 && (
-                                                <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-[1px] sm:rounded-[2px]" />
-                                                )}
-                                            </motion.div>
-                                        </div>
+                                        <motion.div
+                                            initial={{ height: 0 }}
+                                            animate={{ height: `${visualHeight}%` }}
+                                            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: i * 0.01 }}
+                                            className={`w-full rounded-[1px] sm:rounded-[2px] transition-all duration-300 ${
+                                            count > 0 
+                                            ? 'bg-gradient-to-t from-coffee-900 via-coffee-600 to-amber-500 dark:from-coffee-400 dark:via-coffee-300 dark:to-white opacity-80 hover:opacity-100 hover:scale-x-150' 
+                                            : 'bg-coffee-950/5 dark:bg-white/5'
+                                            }`}
+                                        />
                                         
-                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 sm:mb-4 px-2 sm:px-3 py-1 sm:py-2 bg-coffee-950 text-white text-[9px] sm:text-[10px] rounded-lg sm:rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-20 font-black shadow-xl transition-all translate-y-2 group-hover:translate-y-0 border border-coffee-800 flex items-center gap-1.5 hidden sm:flex">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-coffee-400" />
-                                            <span className="text-coffee-300">WK {52 - i}:</span>
-                                            {count} {count === 1 ? 'commit' : 'commits'}
+                                        {/* Tooltip */}
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 bg-coffee-950/90 dark:bg-white/90 backdrop-blur-md text-white dark:text-coffee-950 text-[10px] rounded-lg py-1.5 px-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 font-bold shadow-xl">
+                                            {count} commits
                                         </div>
                                     </div>
                                 );
                             })}
                         </div>
-                        <div className="mt-4 sm:mt-8 flex justify-between items-center text-[8px] sm:text-[9px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-coffee-400/80 pt-3 sm:pt-6 border-t border-coffee-200/50 dark:border-coffee-800/50 shrink-0">
-                            <span className="flex items-center gap-1 sm:gap-2"><Clock size={10} /> 1 YR AGO</span>
-                            <div className="flex items-center gap-2 sm:gap-4 hidden xs:flex">
-                               <div className="flex items-center gap-1 sm:gap-2">
-                                 <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-coffee-500" />
-                                 <span>ACTIVITY</span>
-                               </div>
-                            </div>
-                            <span>TODAY</span>
+                        <div className="mt-6 sm:mt-8 flex justify-between items-center text-[9px] font-black uppercase tracking-[0.2em] text-coffee-400/60 pt-4 border-t border-coffee-950/5 dark:border-white/5">
+                            <span>1 Year Ago</span>
+                            <span>Today</span>
                         </div>
                     </div>
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 sm:p-10">
-                        <div className="w-14 h-14 sm:w-20 sm:h-20 bg-coffee-100/50 dark:bg-coffee-800/30 rounded-full flex items-center justify-center mb-4 sm:mb-6">
-                          <AlertCircle size={24} className="text-coffee-300 dark:text-coffee-600 sm:w-8 sm:h-8" />
-                        </div>
-                        <h4 className="text-coffee-950 dark:text-coffee-100 font-display font-black text-lg sm:text-xl mb-2">Cold Brew Detected</h4>
-                        <p className="text-coffee-500 dark:text-coffee-400 text-xs max-w-[220px] leading-relaxed italic font-serif">
-                            {data ? "No recent batches found in the last year. The server is quiet, but the code still tastes great." : "GitHub's barista is still processing your request. Try again in a minute."}
-                        </p>
-                        <button onClick={onClose} className="mt-6 sm:mt-8 px-6 sm:px-8 py-2.5 sm:py-3 bg-coffee-800 dark:bg-coffee-100 text-white dark:text-coffee-900 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all">
-                          Noted
-                        </button>
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                        <div ref={lottieContainer} className="w-48 h-48 sm:w-64 sm:h-64 -my-4" />
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.2 }}
+                        >
+                            <h4 className="text-coffee-950 dark:text-white font-serif font-black text-2xl mb-2 italic">Tranquil Roast</h4>
+                            <p className="text-coffee-500 dark:text-coffee-300 text-xs max-w-[240px] leading-relaxed mx-auto">
+                                No commit activity detected in the active cycle. The machine is idling at optimal temperature.
+                            </p>
+                        </motion.div>
                     </div>
                 )}
             </div>
 
-            <div className="mt-6 sm:mt-10 grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-5 shrink-0">
-                 <div className="p-4 sm:p-6 bg-coffee-50 dark:bg-coffee-900/40 rounded-2xl sm:rounded-[2rem] border border-coffee-100 dark:border-coffee-800/50 flex flex-col gap-3 sm:gap-4">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white dark:bg-coffee-800 rounded-lg sm:rounded-xl shadow-md flex items-center justify-center text-coffee-600 dark:text-coffee-300">
-                        <Activity size={18} className="sm:w-5 sm:h-5" />
+            <div className="mt-6 sm:mt-10 grid grid-cols-1 xs:grid-cols-2 gap-4 shrink-0">
+                 <div className="p-6 liquid-glass rounded-3xl flex items-center gap-4 hover:bg-white/40 dark:hover:bg-white/10 transition-colors cursor-default">
+                    <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                        <Activity size={20} />
                     </div>
                     <div>
-                        <div className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-coffee-400 mb-1">Total Batches</div>
-                        <div className="text-2xl sm:text-3xl font-black text-coffee-950 dark:text-white leading-none">
-                            {loading ? '...' : totalCommits}
+                        <div className="text-[9px] font-black uppercase tracking-widest text-coffee-400 mb-1">Total Yield</div>
+                        <div className="text-3xl font-black text-coffee-950 dark:text-white leading-none">
+                            {loading ? '-' : totalCommits}
                         </div>
                     </div>
                  </div>
-                 <div className="p-4 sm:p-6 bg-coffee-50 dark:bg-coffee-900/40 rounded-2xl sm:rounded-[2rem] border border-coffee-100 dark:border-coffee-800/50 flex flex-col gap-3 sm:gap-4">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white dark:bg-coffee-800 rounded-lg sm:rounded-xl shadow-md flex items-center justify-center text-coffee-600 dark:text-coffee-300">
-                        <Zap size={18} className="sm:w-5 sm:h-5" />
+                 <div className="p-6 liquid-glass rounded-3xl flex items-center gap-4 hover:bg-white/40 dark:hover:bg-white/10 transition-colors cursor-default">
+                    <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-600 dark:text-amber-400">
+                        <Zap size={20} />
                     </div>
                     <div>
-                        <div className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-coffee-400 mb-1">Weekly Intensity</div>
-                        <div className="text-2xl sm:text-3xl font-black text-coffee-950 dark:text-white leading-none">
-                            {loading ? '...' : (totalCommits / 52).toFixed(1)}
+                        <div className="text-[9px] font-black uppercase tracking-widest text-coffee-400 mb-1">Avg Intensity</div>
+                        <div className="text-3xl font-black text-coffee-950 dark:text-white leading-none">
+                            {loading ? '-' : (totalCommits / 52).toFixed(1)}
                         </div>
                     </div>
                  </div>
             </div>
             
-            <div className="mt-6 sm:mt-8 px-4 sm:px-5 py-3 sm:py-4 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100/50 dark:border-blue-900/30 rounded-2xl flex items-start gap-3 shrink-0">
-              <Info size={14} className="text-blue-500 mt-0.5 flex-shrink-0" />
-              <p className="text-[10px] text-blue-800/70 dark:text-blue-300/70 font-medium leading-relaxed italic">
-                These metrics represent all commit activity synchronized with the main repository across the past 52-week roasting cycle.
+            <div className="mt-6 px-6 py-4 liquid-glass rounded-2xl flex items-center gap-4 shrink-0 opacity-80">
+              <Info size={16} className="text-coffee-400 flex-shrink-0" />
+              <p className="text-[10px] text-coffee-600 dark:text-coffee-300 font-medium leading-relaxed">
+                Visualization reflects main branch commits over the trailing 52-week period. Data cached for performance.
               </p>
             </div>
         </div>

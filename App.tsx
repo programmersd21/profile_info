@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronUp, RefreshCw, Coffee, Github, Loader2 } from 'lucide-react';
+import { ChevronUp, RefreshCw, Coffee, Github, Loader2, AlertCircle, Clock, Zap } from 'lucide-react';
 import { getPortfolioData, RateLimitError } from './services/githubService';
 import { GitHubUser, GitHubRepo, CoffeeStats } from './types';
 import CoffeeLoader from './components/CoffeeLoader';
@@ -10,6 +10,15 @@ import ProfileHero from './components/ProfileHero';
 import RepoGrid from './components/RepoGrid';
 import FollowersList from './components/FollowersList';
 import StatsPage from './components/StatsPage';
+
+const springConfig = { type: "spring", stiffness: 200, damping: 25 };
+
+// Optimized View Variants
+const viewVariants = {
+  initial: { opacity: 0, scale: 0.98, filter: "blur(10px)" },
+  animate: { opacity: 1, scale: 1, filter: "blur(0px)", transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+  exit: { opacity: 0, scale: 1.02, filter: "blur(10px)", transition: { duration: 0.4, ease: "easeInOut" } }
+};
 
 const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -28,8 +37,6 @@ const App: React.FC = () => {
   const [countdown, setCountdown] = useState<string>('');
   const [progress, setProgress] = useState(0);
 
-  const autoRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 300);
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -40,7 +47,7 @@ const App: React.FC = () => {
     if (isInitial) setLoading(true);
     else setBackgroundRefreshing(true);
     
-    const minLoadTime = isInitial ? new Promise(resolve => setTimeout(resolve, 4000)) : Promise.resolve();
+    const minLoadTime = isInitial ? new Promise(resolve => setTimeout(resolve, 2000)) : Promise.resolve();
 
     try {
       const data = await getPortfolioData(forceRefresh);
@@ -71,144 +78,44 @@ const App: React.FC = () => {
 
   useEffect(() => { loadData(true); }, [loadData]);
 
+  // Automatic retry logic for rate limits
   useEffect(() => {
-    let timer: ReturnType<typeof setInterval> | undefined;
-    if (error?.resetAt && error.startAt) {
-      const totalTime = error.resetAt - error.startAt;
-      
-      const updateUI = () => {
+    if (error?.resetAt) {
+      const timer = setInterval(() => {
         const now = Math.floor(Date.now() / 1000);
-        const diff = error.resetAt! - now;
+        const remaining = error.resetAt! - now;
         
-        if (diff <= 0) {
-          setCountdown('Resetting now...');
-          setProgress(100);
-          loadData(false, true); 
-          return;
+        if (remaining <= 0) {
+          clearInterval(timer);
+          setError(null);
+          loadData(true);
+        } else {
+          const minutes = Math.floor(remaining / 60);
+          const seconds = remaining % 60;
+          setCountdown(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+          
+          if (error.startAt) {
+            const total = error.resetAt! - error.startAt;
+            const elapsed = now - error.startAt;
+            setProgress(Math.min(100, (elapsed / total) * 100));
+          }
         }
-
-        const m = Math.floor(diff / 60);
-        const s = diff % 60;
-        setCountdown(`${m}m ${s}s remaining`);
-        
-        const currentProgress = ((totalTime - diff) / totalTime) * 100;
-        setProgress(Math.min(currentProgress, 100));
-      };
-
-      updateUI();
-      timer = setInterval(updateUI, 1000);
+      }, 1000);
+      return () => clearInterval(timer);
     }
-
-    // Auto retry even without exact reset header for generic errors
-    if (error && !error.resetAt) {
-        autoRetryTimer.current = setInterval(() => {
-            loadData(false, true);
-        }, 30000);
-    }
-
-    return () => {
-      if (timer) clearInterval(timer);
-      if (autoRetryTimer.current) clearInterval(autoRetryTimer.current);
-    };
   }, [error, loadData]);
 
   const toggleTheme = (event?: any) => {
     const x = event?.clientX || window.innerWidth / 2;
     const y = event?.clientY || 60;
-    document.body.classList.add('theme-transitioning');
     setRipple({ x, y, show: true });
     setTimeout(() => {
       const nextMode = !isDark;
       setIsDark(nextMode);
       document.documentElement.classList.toggle('dark', nextMode);
-      setTimeout(() => {
-        setRipple(prev => ({ ...prev, show: false }));
-        document.body.classList.remove('theme-transitioning');
-      }, 800);
+      setTimeout(() => setRipple(prev => ({ ...prev, show: false })), 800);
     }, 10);
   };
-
-  if (error && !user) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-coffee-50 dark:bg-coffee-950 p-8 text-center relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none">
-            <div className="w-[600px] h-[600px] border-[1px] border-coffee-800 rounded-full animate-[ping_10s_linear_infinite]" />
-            <div className="w-[400px] h-[400px] border-[1px] border-coffee-800 rounded-full animate-[ping_15s_linear_infinite]" />
-        </div>
-
-        <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="z-10 bg-white dark:bg-coffee-900/50 backdrop-blur-3xl p-8 sm:p-16 rounded-[4rem] border border-coffee-200 dark:border-coffee-800 shadow-2xl max-w-2xl w-full"
-        >
-            <div className="mb-10 flex flex-col items-center">
-                <div className="w-20 h-20 bg-coffee-100 dark:bg-coffee-800 rounded-full flex items-center justify-center mb-6 relative">
-                    {backgroundRefreshing ? (
-                      <Loader2 size={32} className="text-coffee-600 dark:text-coffee-300 animate-spin" />
-                    ) : (
-                      <Coffee size={32} className="text-coffee-600 dark:text-coffee-300" />
-                    )}
-                    <motion.div 
-                        animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-                        transition={{ repeat: Infinity, duration: 2 }}
-                        className="absolute inset-0 border-2 border-coffee-400 rounded-full"
-                    />
-                </div>
-                <h1 className="text-3xl sm:text-4xl font-display font-black text-coffee-950 dark:text-coffee-50 mb-3 tracking-tighter">
-                    {backgroundRefreshing ? "Re-grinding..." : "Barista is on break"}
-                </h1>
-                <p className="text-coffee-500 dark:text-coffee-400 font-serif italic text-lg">
-                    {backgroundRefreshing ? "Pouring a fresh pot of data." : "The server is cooling down. We'll be back in a moment."}
-                </p>
-            </div>
-            
-            {error.resetAt && (
-                <div className="space-y-4 mb-10">
-                    <div className="flex justify-between items-end px-2">
-                        <div className="text-left">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-coffee-400 block mb-1">Status</span>
-                            <span className="text-sm font-bold text-coffee-700 dark:text-coffee-300">
-                              {backgroundRefreshing ? "Connecting..." : "Wait for reset"}
-                            </span>
-                        </div>
-                        <div className="text-right">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-coffee-400 block mb-1">Est. Time</span>
-                            <span className="text-sm font-black text-coffee-800 dark:text-coffee-100 uppercase tracking-tighter">{countdown}</span>
-                        </div>
-                    </div>
-                    <div className="h-3 w-full bg-coffee-100 dark:bg-coffee-800 rounded-full overflow-hidden border border-coffee-200 dark:border-coffee-700">
-                        <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${progress}%` }}
-                            className="h-full bg-coffee-600 dark:bg-coffee-400 shadow-[0_0_15px_rgba(111,69,59,0.3)] transition-all duration-1000"
-                        />
-                    </div>
-                </div>
-            )}
-
-            <div className="flex flex-col sm:flex-row gap-4">
-                <button 
-                    disabled={backgroundRefreshing}
-                    onClick={() => loadData(false, true)} 
-                    className="flex-1 px-8 py-5 bg-coffee-800 dark:bg-coffee-100 text-white dark:text-coffee-950 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
-                >
-                    {backgroundRefreshing ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />}
-                    <span>{backgroundRefreshing ? 'Refreshing...' : 'Try Manual Refresh'}</span>
-                </button>
-                <a 
-                    href="https://github.com/pro-grammer-SD" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex-1 px-8 py-5 border-2 border-coffee-200 dark:border-coffee-700 text-coffee-800 dark:text-coffee-100 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-coffee-100 dark:hover:bg-coffee-800 transition-all flex items-center justify-center gap-3"
-                >
-                    <span>Visit Profile</span>
-                    <Github size={18} />
-                </a>
-            </div>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -218,22 +125,78 @@ const App: React.FC = () => {
             initial={{ clipPath: `circle(0% at ${ripple.x}px ${ripple.y}px)` }}
             animate={{ clipPath: `circle(150% at ${ripple.x}px ${ripple.y}px)` }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: "easeInOut" }}
-            className="fixed inset-0 z-[100] bg-coffee-900 dark:bg-coffee-100 pointer-events-none opacity-10"
+            transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+            className="fixed inset-0 z-[1000] bg-coffee-950 dark:bg-white pointer-events-none opacity-10 mix-blend-overlay"
           />
         )}
       </AnimatePresence>
 
       <AnimatePresence mode="wait">
-        {loading && (
-          <motion.div key="loader" exit={{ opacity: 0, scale: 1.1 }} transition={{ duration: 0.6 }} className="fixed inset-0 z-[100]">
+        {loading && !error && (
+          <motion.div key="loader" exit={{ opacity: 0, scale: 1.1, filter: "blur(20px)" }} transition={{ duration: 0.8 }} className="fixed inset-0 z-[200]">
             <CoffeeLoader />
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Ambient Liquid Background - CSS Driven for Performance */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-20%] left-[-10%] w-[80vw] h-[80vw] rounded-full bg-gradient-to-br from-coffee-200/40 to-coffee-300/40 dark:from-coffee-900/40 dark:to-black blur-[120px] opacity-60 animate-blob" style={{ animationDelay: '0s' }} />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[70vw] h-[70vw] rounded-full bg-gradient-to-tl from-coffee-400/30 to-amber-200/20 dark:from-coffee-800/20 dark:to-coffee-950 blur-[100px] opacity-50 animate-blob" style={{ animationDelay: '5s' }} />
+      </div>
+
+      <AnimatePresence>
+        {error && !user && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            className="fixed inset-0 z-[300] bg-white/50 dark:bg-black/80 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center"
+          >
+             {/* Error Component content unchanged for brevity, reusing existing structure */}
+             <div className="max-w-md w-full space-y-12">
+                <div className="relative inline-block">
+                  <motion.div 
+                    animate={{ y: [0, -20, 0], rotate: [0, 5, -5, 0] }}
+                    transition={{ repeat: Infinity, duration: 4 }}
+                    className="liquid-glass-high p-8 rounded-[3rem] relative z-10"
+                  >
+                    <Coffee size={64} className="text-coffee-600 dark:text-coffee-400 mx-auto" />
+                  </motion.div>
+                </div>
+                <div className="space-y-4">
+                  <h2 className="text-4xl font-serif font-black italic text-coffee-950 dark:text-white">Barista is on break</h2>
+                  <p className="text-coffee-500 dark:text-coffee-400 font-medium leading-relaxed italic">
+                    GitHub's machine needs to cool down. We're currently waiting for a fresh batch of API credits.
+                  </p>
+                </div>
+                {error.resetAt && (
+                  <div className="space-y-8 liquid-glass p-10 rounded-[2.5rem]">
+                    <div className="flex justify-between items-end mb-2">
+                       <span className="text-[10px] font-black uppercase tracking-[0.3em] text-coffee-600 dark:text-coffee-300">Brewing Restart</span>
+                       <span className="text-2xl font-mono font-black text-coffee-800 dark:text-coffee-100">{countdown}</span>
+                    </div>
+                    <div className="h-2 w-full bg-coffee-100/50 dark:bg-white/10 rounded-full overflow-hidden">
+                       <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        className="h-full bg-coffee-600 dark:bg-coffee-400 shadow-[0_0_15px_rgba(140,94,60,0.5)]" 
+                       />
+                    </div>
+                  </div>
+                )}
+                <button 
+                  onClick={() => loadData(true, true)}
+                  className="flex items-center gap-3 mx-auto px-8 py-4 bg-coffee-950 dark:bg-white text-white dark:text-coffee-950 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl"
+                >
+                  Check Early <RefreshCw size={14} />
+                </button>
+             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {!loading && user && (
-        <div className="min-h-screen bg-coffee-50 dark:bg-coffee-950 transition-colors duration-1000">
+        <div className="min-h-screen transition-colors duration-1000 overflow-x-hidden relative z-10">
           <Navbar 
             user={user} isDark={isDark} toggleTheme={toggleTheme} 
             currentView={currentView} setView={setCurrentView}
@@ -241,47 +204,72 @@ const App: React.FC = () => {
             isRefreshing={backgroundRefreshing}
           />
           
-          <main className="relative">
-            {/* Background Refresh Indicator */}
+          <main className="relative pt-10">
             <AnimatePresence>
-              {backgroundRefreshing && (
+              {error && user && (
                 <motion.div 
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="fixed top-24 right-4 sm:right-10 z-[30] flex items-center gap-3 px-4 py-2 bg-coffee-800 dark:bg-coffee-100 text-white dark:text-coffee-950 rounded-full shadow-xl"
+                  initial={{ opacity: 0, y: 50, x: "-50%" }}
+                  animate={{ opacity: 1, y: 0, x: "-50%" }}
+                  exit={{ opacity: 0, y: 50, x: "-50%" }}
+                  className="fixed bottom-10 left-1/2 z-[400] liquid-glass-high p-6 pr-10 rounded-[2rem] border-l-4 border-amber-500 shadow-2xl flex items-center gap-5 min-w-[320px]"
                 >
-                  <Loader2 size={14} className="animate-spin" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Refreshing...</span>
+                  <div className="bg-amber-100 dark:bg-amber-900/50 p-3 rounded-full">
+                    <AlertCircle className="text-amber-600" size={20} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-1">Rate Limit Active</p>
+                    <p className="text-xs font-bold text-coffee-800 dark:text-coffee-200">Refilling in {countdown}</p>
+                  </div>
+                  <button onClick={() => setError(null)} className="text-coffee-400 hover:text-coffee-950 dark:hover:text-white">
+                    <RefreshCw size={14} className="animate-spin" />
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <ProfileHero user={user} setView={setCurrentView} />
-            
             <AnimatePresence mode="wait">
-              <motion.div
-                key={currentView}
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -40 }}
-                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              >
-                {currentView === 'home' && <RepoGrid repos={repos} pinnedRepos={pinnedRepos} tags={tags} />}
-                {currentView === 'followers' && <FollowersList followers={followers} />}
-                {currentView === 'stats' && stats && <StatsPage stats={stats} />}
-              </motion.div>
+              {currentView === 'home' && (
+                <motion.div key="home" variants={viewVariants} initial="initial" animate="animate" exit="exit">
+                  <ProfileHero user={user} setView={setCurrentView} />
+                  <RepoGrid repos={repos} pinnedRepos={pinnedRepos} tags={tags} />
+                </motion.div>
+              )}
+              {currentView === 'followers' && (
+                <motion.div key="followers" variants={viewVariants} initial="initial" animate="animate" exit="exit">
+                  <FollowersList followers={followers} />
+                </motion.div>
+              )}
+              {currentView === 'stats' && stats && (
+                <motion.div key="stats" variants={viewVariants} initial="initial" animate="animate" exit="exit">
+                  <StatsPage stats={stats} />
+                </motion.div>
+              )}
             </AnimatePresence>
           </main>
 
-          <footer className="py-24 bg-coffee-950 text-coffee-600 text-center border-t border-coffee-900/30">
-            <div className="max-w-7xl mx-auto px-4">
-               <p className="font-display font-black text-coffee-200 text-4xl mb-3 tracking-tighter">PRO-GRAMMER-SD</p>
-               <p className="text-[10px] tracking-[0.4em] font-black uppercase mb-10 opacity-60">Crafted with caffeine and curiosity &copy; {new Date().getFullYear()}</p>
-               <div className="flex justify-center items-center gap-6">
-                  <div className="w-16 h-px bg-coffee-900" />
-                  <div className="text-coffee-800 hover:text-coffee-600 transition-colors cursor-pointer"><Coffee size={28} /></div>
-                  <div className="w-16 h-px bg-coffee-900" />
+          <footer className="py-32 text-center relative overflow-hidden mt-20">
+            <div className="absolute inset-0 bg-gradient-to-t from-coffee-100/50 to-transparent dark:from-black/50 pointer-events-none" />
+            <div className="max-w-7xl mx-auto px-4 relative z-10">
+               <motion.p 
+                 initial={{ opacity: 0, y: 20 }}
+                 whileInView={{ opacity: 1, y: 0 }}
+                 className="font-serif italic text-coffee-950/20 dark:text-white/20 text-5xl md:text-7xl mb-6 tracking-tighter"
+               >
+                 pro-grammer-SD
+               </motion.p>
+               <p className="text-[10px] tracking-[0.6em] font-black uppercase mb-12 text-coffee-500">
+                 Brewed with pure intent &copy; {new Date().getFullYear()}
+               </p>
+               <div className="flex justify-center items-center gap-8">
+                  <div className="w-24 h-px bg-coffee-200 dark:bg-white/10" />
+                  <motion.div 
+                    whileHover={{ scale: 1.2, rotate: 360 }}
+                    transition={{ duration: 1 }}
+                    className="text-coffee-400 cursor-pointer"
+                  >
+                    <Coffee size={32} />
+                  </motion.div>
+                  <div className="w-24 h-px bg-coffee-200 dark:bg-white/10" />
                </div>
             </div>
           </footer>
@@ -293,9 +281,9 @@ const App: React.FC = () => {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="fixed bottom-10 right-10 p-5 bg-coffee-800 dark:bg-coffee-100 text-white dark:text-coffee-950 rounded-full shadow-2xl z-50 hover:scale-110 active:scale-90 transition-all group"
+                className="fixed bottom-10 right-10 p-5 liquid-glass-high rounded-full shadow-2xl z-[150] hover:scale-110 active:scale-90 transition-all group text-coffee-950 dark:text-white"
               >
-                <ChevronUp size={28} />
+                <ChevronUp size={28} strokeWidth={3} />
               </motion.button>
             )}
           </AnimatePresence>

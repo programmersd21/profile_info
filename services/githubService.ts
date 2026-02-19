@@ -29,22 +29,10 @@ interface PortfolioData {
   timestamp: number;
 }
 
-/**
- * Helper to construct authentication headers if a GH_TOKEN is provided.
- * This is crucial for avoiding rate limits in shared environments like Vercel.
- */
 const getAuthHeaders = (): Record<string, string> => {
   const headers: Record<string, string> = {
     'Accept': 'application/vnd.github.v3+json',
   };
-  
-  // Try to retrieve token from environment variable
-  const token = typeof process !== 'undefined' ? process.env.GH_TOKEN : null;
-  
-  if (token) {
-    headers['Authorization'] = `token ${token}`;
-  }
-  
   return headers;
 };
 
@@ -53,7 +41,6 @@ const getCache = (): PortfolioData | null => {
     const raw = localStorage.getItem(CONFIG.CACHE_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw);
-    if (Date.now() - data.timestamp > CONFIG.CACHE_TTL) return null;
     return data;
   } catch { return null; }
 };
@@ -84,11 +71,6 @@ const handleResponse = async (response: Response, url: string) => {
     return cache[url]?.data || null;
   }
 
-  if (response.status === 301 || response.status === 302 || response.status === 307) {
-    const newUrl = response.headers.get('location');
-    if (newUrl) return fetchWithETag(newUrl);
-  }
-
   if (!response.ok) {
     if (response.status === 403 || response.status === 429) {
       const resetHeader = response.headers.get('x-ratelimit-reset');
@@ -113,8 +95,14 @@ const fetchWithETag = async (url: string) => {
   
   if (cachedItem?.etag) headers['if-none-match'] = cachedItem.etag;
   
-  const response = await fetch(url, { headers });
-  return handleResponse(response, url);
+  try {
+    const response = await fetch(url, { headers });
+    return handleResponse(response, url);
+  } catch (e) {
+    if (e instanceof RateLimitError) throw e;
+    // Fallback to cache on network error
+    return cachedItem?.data || null;
+  }
 };
 
 const fetchPinnedRepos = async (): Promise<GitHubRepo[]> => {
@@ -141,7 +129,6 @@ const fetchPinnedRepos = async (): Promise<GitHubRepo[]> => {
       repoImage: `https://opengraph.githubassets.com/1/${repo.author}/${repo.name}`
     }));
   } catch (e) {
-    console.error('Pinned API Fetch Error:', e);
     return [];
   }
 };
@@ -185,51 +172,62 @@ const calculateStats = (user: GitHubUser, repos: GitHubRepo[]): CoffeeStats => {
 };
 
 export const getPortfolioData = async (forceRefresh = false): Promise<PortfolioData> => {
-  if (!forceRefresh) {
-    const cached = getCache();
-    if (cached) return cached;
+  const cached = getCache();
+  
+  if (!forceRefresh && cached) {
+    if (Date.now() - cached.timestamp < CONFIG.CACHE_TTL) {
+      return cached;
+    }
   }
 
-  const [userData, reposData, followersData, pinnedReposData] = await Promise.all([
-    fetchWithETag(`${CONFIG.API_BASE}/users/${CONFIG.USERNAME}`),
-    fetchWithETag(`${CONFIG.API_BASE}/users/${CONFIG.USERNAME}/repos?sort=updated&per_page=100`),
-    fetchWithETag(`${CONFIG.API_BASE}/users/${CONFIG.USERNAME}/followers?per_page=100`),
-    fetchPinnedRepos()
-  ]);
+  try {
+    const [userData, reposData, followersData, pinnedReposData] = await Promise.all([
+      fetchWithETag(`${CONFIG.API_BASE}/users/${CONFIG.USERNAME}`),
+      fetchWithETag(`${CONFIG.API_BASE}/users/${CONFIG.USERNAME}/repos?sort=updated&per_page=100`),
+      fetchWithETag(`${CONFIG.API_BASE}/users/${CONFIG.USERNAME}/followers?per_page=100`),
+      fetchPinnedRepos()
+    ]);
 
-  if (!userData) throw new Error("Could not fetch GitHub user. Check connection.");
+    if (!userData) {
+      if (cached) return cached;
+      throw new Error("Could not fetch GitHub user.");
+    }
 
-  const user = userData as GitHubUser;
-  const rawRepos = (reposData || []) as any[];
-  
-  const repos: GitHubRepo[] = rawRepos.map(r => ({
-    ...r,
-    repoImage: `https://opengraph.githubassets.com/1/${r.full_name}`,
-    open_issues_count: r.open_issues_count || 0
-  }));
+    const user = userData as GitHubUser;
+    const rawRepos = (reposData || []) as any[];
+    
+    const repos: GitHubRepo[] = rawRepos.map(r => ({
+      ...r,
+      repoImage: `https://opengraph.githubassets.com/1/${r.full_name}`,
+      open_issues_count: r.open_issues_count || 0
+    }));
 
-  const followers = (followersData || []) as GitHubUser[];
+    const followers = (followersData || []) as GitHubUser[];
 
-  // Sync pinned repos with real issue counts and stats from the full list
-  const pinnedRepos: GitHubRepo[] = pinnedReposData.map(p => {
-    const fullRepo = repos.find(r => r.name === p.name);
-    return fullRepo ? { ...fullRepo, repoImage: p.repoImage } : p;
-  });
+    const pinnedRepos: GitHubRepo[] = pinnedReposData.map(p => {
+      const fullRepo = repos.find(r => r.name === p.name);
+      return fullRepo ? { ...fullRepo, repoImage: p.repoImage } : p;
+    });
 
-  const finalPinned = pinnedRepos.length > 0 
-    ? pinnedRepos 
-    : [...repos].sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0)).slice(0, 6);
+    const finalPinned = pinnedRepos.length > 0 
+      ? pinnedRepos 
+      : [...repos].sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0)).slice(0, 6);
 
-  const reposToTag = [...finalPinned, ...repos.slice(0, 5)];
-  const tagEntries = await Promise.all(
-    reposToTag.map(async (r) => [r.name, await fetchTags(r.name)])
-  );
-  const tags = Object.fromEntries(tagEntries.filter(e => e[1]));
-  const stats = calculateStats(user, repos);
+    const reposToTag = [...finalPinned, ...repos.slice(0, 5)];
+    const tagEntries = await Promise.all(
+      reposToTag.map(async (r) => [r.name, await fetchTags(r.name)])
+    );
+    const tags = Object.fromEntries(tagEntries.filter(e => e[1]));
+    const stats = calculateStats(user, repos);
 
-  const data = { user, repos, pinnedRepos: finalPinned, followers, tags, stats };
-  setCache(data);
-  return { ...data, timestamp: Date.now() };
+    const data = { user, repos, pinnedRepos: finalPinned, followers, tags, stats };
+    setCache(data);
+    return { ...data, timestamp: Date.now() };
+  } catch (err) {
+    // Critical: If we hit a rate limit but have a cache, use it!
+    if (cached) return cached;
+    throw err;
+  }
 };
 
 export const fetchReadme = async (repoName: string, initialBranch: string = 'main'): Promise<{ content: string; branch: string } | null> => {

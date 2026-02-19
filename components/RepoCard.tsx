@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, GitFork, GitBranch, ChevronDown, Check, Pin, Tag, ExternalLink, Terminal, BarChart2, Coffee, CircleDot } from 'lucide-react';
+import { Star, GitFork, GitBranch, ChevronDown, Sparkles, ExternalLink, CircleDot, Loader2, Copy, Check, BarChart2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -12,10 +12,11 @@ import RepoStatsModal from './RepoStatsModal';
 interface RepoCardProps {
   repo: GitHubRepo;
   isPinned?: boolean;
-  tag?: string;
+  onTopicClick?: (topic: string) => void;
+  selectedTopic?: string | null;
 }
 
-const RepoCard: React.FC<RepoCardProps> = ({ repo, isPinned = false, tag }) => {
+const RepoCard: React.FC<RepoCardProps> = ({ repo, isPinned = false, onTopicClick, selectedTopic }) => {
   const [expanded, setExpanded] = useState(false);
   const [readme, setReadme] = useState<string | null>(null);
   const [readmeBranch, setReadmeBranch] = useState<string>('main');
@@ -55,164 +56,213 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo, isPinned = false, tag }) => {
   return (
     <>
       <motion.div 
-        layout
-        className={`group rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden flex flex-col relative border-2 transition-all duration-500 h-full ${
-          isPinned 
-            ? 'border-coffee-700 dark:border-coffee-400 bg-coffee-100/90 dark:bg-coffee-900/90 shadow-2xl' 
-            : 'border-coffee-200 dark:border-coffee-800 bg-coffee-50 dark:bg-coffee-950/40 shadow-xl'
+        layout="position"
+        // Force hardware acceleration for smoother hover
+        style={{ willChange: "transform" }}
+        whileHover={{ y: -8, scale: 1.01 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        className={`group rounded-[2.5rem] overflow-hidden flex flex-col relative transition-colors duration-500 h-full liquid-glass ${
+          isPinned ? 'border-2 border-amber-500/20' : ''
         }`}
       >
-        {/* Visual Preview Section with Subtle Zoom */}
+        {/* Subtle hover highlighting within the glass */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+
+        {/* Visual Preview */}
         {repo.repoImage && (
-          <div className="relative h-48 sm:h-56 overflow-hidden">
+          <div className="relative h-56 sm:h-64 overflow-hidden">
             <motion.img 
               src={repo.repoImage} 
               alt={repo.name} 
-              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+              className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-110"
             />
-            <div className={`absolute inset-0 bg-gradient-to-t to-transparent ${isPinned ? 'from-coffee-100/95 dark:from-coffee-900/95' : 'from-coffee-50 dark:from-coffee-950/90'}`} />
+            <div className="absolute inset-0 bg-gradient-to-t from-white/90 dark:from-black/80 via-transparent to-transparent" />
             
-            {/* Status Overlays */}
-            <div className="absolute top-4 left-4 flex gap-2">
-                {isPinned && (
-                  <div className="bg-coffee-800 dark:bg-coffee-100 text-white dark:text-coffee-950 px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 backdrop-blur-sm">
-                    <Pin size={12} className="fill-current" />
-                    <span className="text-[10px] font-black tracking-widest uppercase">Signature</span>
-                  </div>
-                )}
+            <div className="absolute top-6 left-6 flex items-center gap-3">
+              {isPinned && (
+                <div className="liquid-glass-high text-coffee-950 dark:text-white px-4 py-2 rounded-full flex items-center gap-2">
+                  <Sparkles size={12} className="text-amber-500" />
+                  <span className="text-[10px] font-black tracking-[0.2em] uppercase">Signature</span>
+                </div>
+              )}
+            </div>
+
+            {/* Float Stat - Star Count */}
+            <div className="absolute bottom-6 right-6">
+              <div className="liquid-glass-high p-4 rounded-3xl flex flex-col items-center min-w-[70px]">
+                <motion.div
+                  key={`star-icon-${repo.stargazers_count}`}
+                  initial={{ scale: 1 }}
+                  animate={{ scale: [1, 1.4, 1], rotate: [0, 15, -15, 0] }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                >
+                  <Star size={20} className="text-amber-500 mb-1 fill-amber-500" />
+                </motion.div>
+                <motion.span 
+                  key={`star-count-${repo.stargazers_count}`}
+                  initial={{ scale: 0.5, opacity: 0, y: 5 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                  className="text-lg font-black tracking-tight"
+                >
+                  {repo.stargazers_count}
+                </motion.span>
+              </div>
             </div>
           </div>
         )}
 
-        <div className="flex-1 flex flex-col">
-          <div className="p-6 sm:p-10 flex flex-col h-full">
-            <div className="mb-4">
-                <div className="flex items-center gap-2 mb-3">
-                    <GitBranch size={16} className="text-coffee-500" />
-                    <h3 className="font-display font-black text-2xl sm:text-3xl text-coffee-950 dark:text-coffee-50 tracking-tight truncate group-hover:text-coffee-700 dark:group-hover:text-coffee-400 transition-colors">
-                      {repo.name}
-                    </h3>
-                </div>
-                
-                <div className="flex flex-wrap gap-2">
-                    {repo.language && (
-                        <span className="px-3 py-1 bg-coffee-800 dark:bg-coffee-200 text-[9px] font-black uppercase tracking-[0.2em] text-white dark:text-coffee-950 rounded-md border border-coffee-900 dark:border-coffee-100">
-                            {repo.language}
-                        </span>
-                    )}
-                </div>
-            </div>
-
-            <p className="text-coffee-700 dark:text-coffee-300 mb-6 text-sm sm:text-base leading-relaxed min-h-[3rem] line-clamp-2 italic font-serif">
-                {repo.description || "A smooth, undocumented blend of pure code and late-night inspiration."}
-            </p>
-
-            {/* Topics / Tags Section - Styled as Pills */}
-            {repo.topics && repo.topics.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-8">
-                {repo.topics.map(topic => (
-                  <a
-                    key={topic}
-                    href={`https://github.com/topics/${topic}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-1 bg-white dark:bg-coffee-800/50 border border-coffee-200 dark:border-coffee-700 text-coffee-600 dark:text-coffee-400 text-[10px] font-black uppercase tracking-wider rounded-full hover:bg-coffee-100 dark:hover:bg-coffee-700 transition-colors flex items-center gap-1.5"
-                  >
-                    <Tag size={10} />
-                    {topic}
-                  </a>
-                ))}
+        <div className="flex-1 flex flex-col p-8 sm:p-10 relative z-10">
+          <header className="mb-8">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-coffee-950/5 dark:bg-white/10 rounded-xl">
+                <GitBranch size={16} className="text-coffee-600 dark:text-coffee-300" />
               </div>
-            )}
-
-            {/* Optimized Metrics Row with requested concentric icon for issues */}
-            <div className="flex items-center gap-5 sm:gap-8 mb-8 mt-auto">
-                <div className="flex items-center gap-2 group/stat cursor-help" title="Stars">
-                    <Star size={18} className="text-coffee-600 dark:text-coffee-400 transition-transform group-hover/stat:scale-125" />
-                    <span className="font-black text-sm text-coffee-900 dark:text-coffee-100">{repo.stargazers_count}</span>
-                </div>
-                <div className="flex items-center gap-2 group/stat cursor-help" title="Forks">
-                    <GitFork size={18} className="text-coffee-500 transition-transform group-hover/stat:scale-125" />
-                    <span className="font-black text-sm text-coffee-900 dark:text-coffee-100">{repo.forks_count}</span>
-                </div>
-                <div className="flex items-center gap-2 group/stat cursor-help" title="Open Issues">
-                    <CircleDot size={18} className="text-red-500/80 transition-transform group-hover/stat:scale-125" />
-                    <span className="font-black text-sm text-coffee-900 dark:text-coffee-100">{repo.open_issues_count}</span>
-                </div>
-                <div className="ml-auto hidden sm:block">
-                   <div className="px-3 py-1 bg-coffee-100 dark:bg-coffee-800/50 rounded-lg">
-                      <span className="text-[9px] font-black text-coffee-400 dark:text-coffee-500 uppercase tracking-widest">{analysis.roast}</span>
-                   </div>
-                </div>
+              <h3 className="font-serif italic font-black text-3xl text-coffee-950 dark:text-white truncate tracking-tight">
+                {repo.name}
+              </h3>
             </div>
-
-            <div className="grid grid-cols-5 sm:flex gap-3 sm:gap-4 mb-8">
-              <a 
-                href={repo.html_url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="col-span-2 sm:flex-1 min-h-[48px] bg-coffee-900 dark:bg-coffee-100 text-white dark:text-coffee-950 py-3 rounded-2xl font-black text-[10px] sm:text-xs flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all shadow-xl"
-              >
-                <span>TASTE CODE</span>
-                <ExternalLink size={14} />
-              </a>
-              <button 
-                onClick={copyCloneUrl}
-                className={`col-span-2 sm:flex-1 min-h-[48px] px-4 border-2 rounded-2xl flex items-center justify-center gap-2 transition-all duration-300 ${
-                    copied 
-                    ? 'bg-coffee-600 border-coffee-600 text-white' 
-                    : 'bg-white dark:bg-coffee-900/50 border-coffee-200 dark:border-coffee-700 text-coffee-800 dark:text-coffee-100 hover:bg-coffee-50'
-                }`}
-              >
-                <span className="text-[10px] font-black uppercase tracking-widest truncate">
-                  {copied ? 'COPIED' : 'CLONE'}
+            
+            <div className="flex flex-wrap gap-2.5">
+                {repo.language && (
+                    <span className="px-3.5 py-1.5 liquid-glass-high text-[10px] font-black uppercase tracking-[0.2em] text-coffee-600 dark:text-coffee-300 rounded-full">
+                        {repo.language}
+                    </span>
+                )}
+                <span className="px-3.5 py-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-emerald-500/20">
+                  {analysis.roast}
                 </span>
-                <Terminal size={14} className="flex-shrink-0" />
-              </button>
-              <button
-                onClick={() => setShowStats(true)}
-                className="col-span-1 min-h-[48px] sm:w-[56px] flex-shrink-0 flex items-center justify-center rounded-2xl border-2 border-coffee-200 dark:border-coffee-700 text-coffee-600 dark:text-coffee-400 hover:bg-coffee-100 dark:hover:bg-coffee-800 transition-all active:scale-95"
-                title="Lab Reports"
-              >
-                <BarChart2 size={20} />
-              </button>
             </div>
+          </header>
 
-            <div className="mt-0 pt-6 border-t border-coffee-200 dark:border-coffee-800">
+          <p className="text-coffee-700 dark:text-coffee-400 mb-10 text-base leading-relaxed line-clamp-2 font-medium opacity-90">
+              {repo.description || "An undocumented secret blend of pure logic and evening silence distilled into high-performance source code."}
+          </p>
+
+          {/* Topics */}
+          {repo.topics && repo.topics.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-10">
+              {repo.topics.slice(0, 5).map(topic => (
                 <button 
-                    onClick={toggleExpand}
-                    className="w-full text-[10px] font-black tracking-[0.3em] text-coffee-400 hover:text-coffee-900 dark:hover:text-coffee-100 transition-colors flex items-center justify-center gap-3 uppercase"
+                  key={topic} 
+                  onClick={() => onTopicClick?.(topic)}
+                  className={`px-3 py-1 text-[8px] font-black uppercase tracking-widest rounded-full border transition-all active:scale-95 ${
+                    selectedTopic === topic
+                    ? 'bg-coffee-950 text-white border-coffee-950 dark:bg-white dark:text-coffee-950 dark:border-white'
+                    : 'bg-white/40 dark:bg-white/5 text-coffee-500 border-coffee-200/30 hover:bg-white/60 dark:hover:bg-white/10'
+                  }`}
                 >
-                    {expanded ? 'Hide Recipe' : 'Detailed Notes'}
-                    <ChevronDown className={`transition-transform duration-500 ${expanded ? 'rotate-180' : ''}`} size={16} />
+                  {topic}
                 </button>
+              ))}
+            </div>
+          )}
+
+          {/* Stats Summary Panel */}
+          <div className="grid grid-cols-2 gap-4 mb-10 mt-auto">
+            <div className="bg-white/40 dark:bg-white/5 p-4 rounded-3xl border border-white/20 flex flex-col">
+               <span className="text-[9px] font-black text-coffee-500 dark:text-coffee-400 uppercase tracking-widest mb-1">Impact</span>
+               <div className="flex items-center gap-2">
+                 <GitFork size={14} className="text-coffee-900 dark:text-white" />
+                 <span className="font-black text-sm">{repo.forks_count} Forks</span>
+               </div>
+            </div>
+            <div className="bg-white/40 dark:bg-white/5 p-4 rounded-3xl border border-white/20 flex flex-col">
+               <span className="text-[9px] font-black text-coffee-500 dark:text-coffee-400 uppercase tracking-widest mb-1">Issues</span>
+               <div className="flex items-center gap-2">
+                 <CircleDot size={14} className="text-coffee-900 dark:text-white" />
+                 <span className="font-black text-sm">{repo.open_issues_count} Active</span>
+               </div>
             </div>
           </div>
 
-          <AnimatePresence>
-            {expanded && (
-              <motion.div 
-                initial={{ height: 0, opacity: 0 }} 
-                animate={{ height: 'auto', opacity: 1 }} 
-                exit={{ height: 0, opacity: 0 }} 
-                className="bg-coffee-100/30 dark:bg-black/20 overflow-hidden border-t border-coffee-200 dark:border-coffee-800"
+          <div className="flex gap-3 sm:gap-4">
+            <a 
+              href={repo.html_url} 
+              target="_blank" 
+              className="flex-1 min-h-[50px] sm:min-h-[60px] bg-coffee-950 dark:bg-white text-white dark:text-coffee-950 rounded-3xl font-black text-[10px] sm:text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:scale-[1.03] active:scale-95 transition-all shadow-xl"
+            >
+              Taste Code
+              <ExternalLink size={16} />
+            </a>
+
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={copyCloneUrl}
+              className="w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 flex items-center justify-center rounded-3xl liquid-glass-high text-coffee-500 hover:text-coffee-950 dark:hover:text-white transition-all hover:shadow-lg relative overflow-hidden"
+              title="Copy Git Clone Command"
+            >
+              <AnimatePresence mode='wait'>
+                {copied ? (
+                  <motion.div
+                    key="check"
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.5, opacity: 0 }}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <Check size={20} className="text-emerald-500 sm:w-6 sm:h-6" strokeWidth={3} />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="copy"
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.5, opacity: 0 }}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <Copy size={20} className="sm:w-6 sm:h-6" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.button>
+
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setShowStats(true)}
+              className="w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 flex items-center justify-center rounded-3xl liquid-glass-high text-coffee-500 hover:text-coffee-950 dark:hover:text-white transition-all hover:shadow-lg"
+              title="Roast Lab Analytics"
+            >
+              <BarChart2 size={24} className="sm:w-8 sm:h-8" />
+            </motion.button>
+          </div>
+
+          <div className="mt-10 pt-8 border-t border-coffee-950/5 dark:border-white/5">
+              <button 
+                  onClick={toggleExpand}
+                  className="w-full text-[10px] font-black tracking-[0.5em] text-coffee-400 hover:text-coffee-950 dark:hover:text-white transition-colors flex items-center justify-center gap-4 uppercase"
               >
-                <div className="p-8 sm:p-10 prose prose-sm dark:prose-invert max-w-none prose-p:text-coffee-800 dark:prose-p:text-coffee-300 prose-headings:text-coffee-950 dark:prose-headings:text-coffee-100 prose-pre:bg-coffee-900/90 prose-code:text-coffee-400 prose-img:rounded-3xl">
-                    {loadingReadme ? (
-                      <div className="flex flex-col items-center py-12 gap-5">
-                        <div className="w-10 h-10 border-4 border-coffee-200 dark:border-coffee-800 border-t-coffee-700 rounded-full animate-spin" />
-                        <span className="text-[10px] font-black text-coffee-400 animate-pulse uppercase tracking-[0.4em]">Steeping docs...</span>
-                      </div>
-                    ) : (
-                        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} urlTransform={transformImageUri}>
-                            {readme || ''}
-                        </ReactMarkdown>
-                    )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  {expanded ? 'Conceal Archive' : 'Detailed Narrative'}
+                  <ChevronDown className={`transition-transform duration-700 ${expanded ? 'rotate-180' : ''}`} size={16} />
+              </button>
+          </div>
         </div>
+
+        <AnimatePresence>
+          {expanded && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }} 
+              animate={{ height: 'auto', opacity: 1 }} 
+              exit={{ height: 0, opacity: 0 }} 
+              className="bg-white/40 dark:bg-black/40 overflow-hidden border-t border-coffee-200/50 dark:border-white/5"
+            >
+              <div className="p-10 sm:p-12 prose prose-sm md:prose-base dark:prose-invert max-w-none prose-p:text-coffee-800 dark:prose-p:text-coffee-300 prose-headings:font-serif italic">
+                  {loadingReadme ? (
+                    <div className="flex flex-col items-center py-20 gap-6 opacity-40">
+                      <div className="relative">
+                        <Loader2 size={32} className="animate-spin text-coffee-600" />
+                      </div>
+                      <span className="text-[11px] font-black uppercase tracking-[0.5em]">Decanting...</span>
+                    </div>
+                  ) : (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} urlTransform={transformImageUri}>
+                          {readme || ''}
+                      </ReactMarkdown>
+                  )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       <AnimatePresence>

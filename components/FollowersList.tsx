@@ -2,140 +2,133 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GitHubUser } from '../types';
-import { Users, ArrowUpRight, ChevronLeft, ChevronRight, Coffee } from 'lucide-react';
+import { Users, ArrowUpRight, Search, Coffee, UserCheck } from 'lucide-react';
 
 interface FollowersListProps {
   followers: GitHubUser[];
 }
 
-const FOLLOWERS_PER_PAGE = 12;
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { 
+    opacity: 1,
+    transition: { staggerChildren: 0.05 }
+  }
+};
 
-const getFollowerStatus = (id: number) => {
-  const statuses = [
-    'Espresso Elite',
-    'Daily Regular',
-    'Caffeine Connoisseur',
-    'New Brew Reviewer'
-  ];
-  return statuses[id % statuses.length];
+const itemVariants = {
+  hidden: { opacity: 0, scale: 0.9, y: 20 },
+  visible: { 
+    opacity: 1, 
+    scale: 1, 
+    y: 0,
+    transition: { type: "spring", stiffness: 200, damping: 25 }
+  }
 };
 
 const FollowersList: React.FC<FollowersListProps> = ({ followers }) => {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [search, setSearch] = useState('');
 
-  const sortedFollowers = useMemo(() => {
-    return [...followers];
-  }, [followers]);
-
-  const totalPages = Math.ceil(sortedFollowers.length / FOLLOWERS_PER_PAGE);
-  const currentFollowers = sortedFollowers.slice((currentPage - 1) * FOLLOWERS_PER_PAGE, currentPage * FOLLOWERS_PER_PAGE);
+  const filtered = useMemo(() => {
+    return followers.filter(f => 
+      f.login.toLowerCase().includes(search.toLowerCase()) || 
+      (f.name && f.name.toLowerCase().includes(search.toLowerCase()))
+    );
+  }, [followers, search]);
 
   return (
-    <section id="followers" className="py-16 md:py-24 bg-white dark:bg-coffee-950 rounded-t-[3rem] md:rounded-t-[5rem] shadow-[0_-20px_80px_-20px_rgba(0,0,0,0.1)] min-h-screen relative z-10 transition-colors duration-500">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <div className="mb-12 md:mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-coffee-100 dark:bg-coffee-900 text-coffee-700 dark:text-coffee-300 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-tighter mb-4">
-              <Users size={14} />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
+      <header className="mb-16 md:mb-24 space-y-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+          <div>
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+              className="flex items-center gap-3 text-coffee-500 font-mono text-sm tracking-widest uppercase mb-4"
+            >
+              <UserCheck size={16} />
               <span>Patron Registry</span>
-            </div>
-            <h2 className="text-4xl sm:text-6xl font-display font-black text-coffee-950 dark:text-coffee-50 tracking-tight leading-none mb-4">
-                The Roast Testers
-            </h2>
-            <p className="text-coffee-500 dark:text-coffee-400 text-base sm:text-lg font-serif italic">The regular patrons who savor every update in the cellar.</p>
+            </motion.div>
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+              className="text-5xl md:text-7xl font-serif font-black tracking-tighter"
+            >
+              The <span className="italic text-coffee-600 dark:text-coffee-400">Patrons</span>
+            </motion.h2>
+          </div>
+          
+          <div className="flex items-center gap-4 liquid-glass-high p-2 pr-6 rounded-full shadow-lg min-w-[320px] group focus-within:ring-2 ring-coffee-300 transition-all">
+            <div className="bg-coffee-950/10 dark:bg-white/10 p-3 rounded-full"><Search className="text-coffee-600 dark:text-coffee-300" size={18} /></div>
+            <input 
+              type="text" 
+              placeholder="Search registry..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-transparent outline-none w-full text-sm font-black uppercase tracking-widest placeholder:text-coffee-400 dark:text-white"
+            />
+          </div>
         </div>
+      </header>
 
-        {sortedFollowers.length > 0 ? (
-             <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
-                    <AnimatePresence mode="popLayout">
-                        {currentFollowers.map((follower, index) => (
-                            <motion.div
-                                key={follower.id}
-                                initial={{ opacity: 0, y: 30 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{ delay: (index % 4) * 0.05 }}
-                                className="bg-coffee-50 dark:bg-coffee-900/20 rounded-[2rem] p-6 md:p-8 border border-coffee-100 dark:border-coffee-800 hover:shadow-2xl hover:-translate-y-1 transition-all group flex flex-col"
-                            >
-                                <div className="flex items-center gap-4 md:gap-6 mb-6">
-                                     <div className="relative flex-shrink-0">
-                                        <div className="absolute inset-0 bg-coffee-500/20 rounded-full blur-xl scale-125 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <img 
-                                            src={follower.avatar_url} 
-                                            alt={follower.login}
-                                            className="w-14 h-14 md:w-16 md:h-16 rounded-full border-2 md:border-4 border-white dark:border-coffee-800 shadow-lg object-cover relative z-10" 
-                                        />
-                                        <div className="absolute -bottom-1 -right-1 bg-coffee-800 dark:bg-coffee-100 rounded-full p-1 shadow-md z-20">
-                                            <Coffee size={10} className="text-white dark:text-coffee-900" />
-                                        </div>
-                                     </div>
-                                     <div className="min-w-0">
-                                         <div className="text-[10px] font-black text-coffee-400 uppercase tracking-widest mb-0.5">
-                                            Order #{follower.id.toString().slice(-4)}
-                                         </div>
-                                         <div className="text-[9px] font-black text-coffee-600 dark:text-coffee-300 uppercase tracking-[0.2em] leading-none mb-2">
-                                            {getFollowerStatus(follower.id)}
-                                         </div>
-                                         <h3 className="font-display font-bold text-lg text-coffee-900 dark:text-coffee-100 truncate group-hover:text-coffee-700 dark:group-hover:text-coffee-200 transition-colors">
-                                             {follower.name || follower.login}
-                                         </h3>
-                                     </div>
-                                </div>
-                                
-                                <div className="flex-1">
-                                    <p className="text-coffee-500 dark:text-coffee-400 text-xs mb-4 font-mono">@{follower.login}</p>
-                                    <p className="text-coffee-600 dark:text-coffee-300 text-[11px] md:text-xs line-clamp-2 italic leading-relaxed">
-                                        {follower.bio || "Savoring the bits, one byte at a time with a warm cup."}
-                                    </p>
-                                </div>
-                                
-                                <div className="mt-8 flex justify-end">
-                                    <a 
-                                        href={follower.html_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-2 text-[9px] font-black tracking-widest uppercase text-coffee-600 dark:text-coffee-300 hover:text-white hover:bg-coffee-800 dark:hover:bg-coffee-100 dark:hover:text-coffee-950 px-4 py-2 rounded-xl transition-all border border-coffee-200 dark:border-coffee-700 active:scale-95"
-                                    >
-                                        <span>PROFILE</span>
-                                        <ArrowUpRight size={12} />
-                                    </a>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                </div>
-
-                {totalPages > 1 && (
-                    <div className="flex justify-center items-center gap-5 sm:gap-8 mt-16 md:mt-24">
-                        <button 
-                            disabled={currentPage === 1}
-                            onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({top: 0, behavior: 'smooth'}); }}
-                            className="p-3 sm:p-4 bg-coffee-100 dark:bg-coffee-900 text-coffee-800 dark:text-coffee-200 rounded-full disabled:opacity-20 hover:scale-110 active:scale-90 transition-all shadow-lg"
-                        >
-                            <ChevronLeft size={20} className="sm:w-6 sm:h-6" />
-                        </button>
-                        <div className="text-center font-display min-w-[100px]">
-                            <div className="text-2xl sm:text-3xl font-black text-coffee-900 dark:text-coffee-50 leading-none">{currentPage}</div>
-                            <div className="text-[9px] sm:text-[10px] uppercase font-black tracking-widest text-coffee-400 mt-1">OF {totalPages} PAGES</div>
-                        </div>
-                        <button 
-                            disabled={currentPage === totalPages}
-                            onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({top: 0, behavior: 'smooth'}); }}
-                            className="p-3 sm:p-4 bg-coffee-100 dark:bg-coffee-900 text-coffee-800 dark:text-coffee-200 rounded-full disabled:opacity-20 hover:scale-110 active:scale-90 transition-all shadow-lg"
-                        >
-                            <ChevronRight size={20} className="sm:w-6 sm:h-6" />
-                        </button>
+      {filtered.length > 0 ? (
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8"
+        >
+          <AnimatePresence mode="popLayout">
+            {filtered.map((patron) => (
+              <motion.div
+                key={patron.id}
+                layout="position"
+                variants={itemVariants}
+                exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                className="group relative liquid-glass p-8 rounded-[2.5rem] shadow-xl hover:-translate-y-2 transition-all"
+              >
+                <div className="flex items-center gap-6 mb-8">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-white/50 rounded-full blur-xl scale-125 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <img 
+                      src={patron.avatar_url} 
+                      className="w-20 h-20 rounded-full border-2 border-white/20 shadow-lg object-cover relative z-10" 
+                    />
+                    <div className="absolute -bottom-1 -right-1 bg-coffee-950 dark:bg-white rounded-full p-2 z-20 shadow-md">
+                      <Coffee size={10} className="text-white dark:text-coffee-950" />
                     </div>
-                )}
-             </>
-        ) : (
-            <div className="text-center py-32 md:py-48">
-                <p className="text-xl sm:text-2xl font-display font-black text-coffee-300 uppercase tracking-[0.3em] px-4">The club awaits its first member.</p>
-            </div>
-        )}
-      </div>
-    </section>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black text-coffee-400 uppercase tracking-widest mb-1">ID #{patron.id.toString().slice(-4)}</p>
+                    <h4 className="text-xl font-serif font-black italic text-coffee-950 dark:text-white truncate">@{patron.login}</h4>
+                  </div>
+                </div>
+                
+                <p className="text-xs text-coffee-500 dark:text-coffee-400 leading-relaxed mb-8 min-h-[40px] italic">
+                  One of {followers.length} regular patrons savoring the daily brew.
+                </p>
+
+                <div className="flex justify-end">
+                  <motion.a 
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    href={patron.html_url} target="_blank"
+                    className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-coffee-600 dark:text-coffee-300 border border-coffee-950/10 dark:border-white/10 px-5 py-2.5 rounded-2xl hover:bg-coffee-950 hover:text-white dark:hover:bg-white dark:hover:text-coffee-950 transition-colors"
+                  >
+                    Investigate
+                    <ArrowUpRight size={14} />
+                  </motion.a>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
+      ) : (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-40">
+          <Coffee size={48} className="mx-auto text-coffee-200 mb-6 animate-bounce" />
+          <h3 className="text-2xl font-black text-coffee-300 uppercase tracking-widest">Patron Not Found</h3>
+          <p className="text-sm text-coffee-400 font-serif italic mt-2">The registry contains no records matching this query.</p>
+        </motion.div>
+      )}
+    </div>
   );
 };
 

@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Search, Coffee, Sparkles, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import { Search, Sparkles, ChevronLeft, ChevronRight, ChevronDown, Tag, X } from 'lucide-react';
 import { GitHubRepo } from '../types';
 import RepoCard from './RepoCard';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,9 +13,21 @@ interface RepoGridProps {
 
 const ITEMS_PER_PAGE = 10;
 
+// Stagger variants for the container
+const gridContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: { 
+    opacity: 1,
+    transition: { 
+      staggerChildren: 0.05
+    }
+  }
+};
+
 const RepoGrid: React.FC<RepoGridProps> = ({ repos, pinnedRepos, tags }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLang, setSelectedLang] = useState<string>('All Roasts');
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -32,9 +44,10 @@ const RepoGrid: React.FC<RepoGridProps> = ({ repos, pinnedRepos, tags }) => {
         const matchesSearch = repo.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                              (repo.description && repo.description.toLowerCase().includes(searchTerm.toLowerCase()));
         const matchesLang = selectedLang === 'All Roasts' || repo.language === selectedLang;
-        return matchesSearch && matchesLang;
+        const matchesTopic = !selectedTopic || (repo.topics && repo.topics.includes(selectedTopic));
+        return matchesSearch && matchesLang && matchesTopic;
       });
-  }, [repos, pinnedRepos, searchTerm, selectedLang]);
+  }, [repos, pinnedRepos, searchTerm, selectedLang, selectedTopic]);
 
   const totalPages = Math.ceil(filteredOthers.length / ITEMS_PER_PAGE);
   const currentRepos = filteredOthers.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -45,38 +58,51 @@ const RepoGrid: React.FC<RepoGridProps> = ({ repos, pinnedRepos, tags }) => {
     setIsFilterOpen(false);
   };
 
+  const handleTopicClick = (topic: string) => {
+    setSelectedTopic(topic === selectedTopic ? null : topic);
+    setCurrentPage(1);
+    document.getElementById('archive-title')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedLang('All Roasts');
+    setSelectedTopic(null);
+    setCurrentPage(1);
+  };
+
   return (
-    <section id="repos" className="py-16 md:py-24 bg-white dark:bg-coffee-950 rounded-t-[3rem] md:rounded-t-[5rem] shadow-[0_-20px_80px_-20px_rgba(0,0,0,0.1)] relative z-10 -mt-10">
+    <section id="repos" className="py-16 md:py-24 liquid-glass border-t-0 rounded-t-[3rem] md:rounded-t-[5rem] shadow-[0_-20px_80px_-20px_rgba(0,0,0,0.05)] relative z-10 -mt-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="flex flex-col md:flex-row justify-between items-center md:items-start mb-12 md:mb-16 gap-8 md:gap-10">
-            <div className="text-center md:text-left w-full md:w-auto">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-coffee-100 dark:bg-coffee-900 text-coffee-700 dark:text-coffee-300 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-tighter mb-4">
+            <div className="text-center md:text-left w-full md:w-auto" id="archive-title">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 liquid-glass-high text-coffee-700 dark:text-coffee-300 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-tighter mb-4 shadow-sm">
                   <Sparkles size={14} />
                   <span>Curated Collections</span>
                 </div>
                 <h2 className="text-4xl sm:text-5xl lg:text-6xl font-display font-black text-coffee-950 dark:text-coffee-50 tracking-tight leading-none">
                     The Archive
                 </h2>
-                <p className="mt-4 text-coffee-500 dark:text-coffee-400 text-base sm:text-lg font-serif italic">Every batch of code, roasted to perfection.</p>
+                <p className="mt-4 text-coffee-600 dark:text-coffee-400 text-base sm:text-lg font-serif italic">Every batch of code, roasted to perfection.</p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full md:w-auto">
                 <div className="relative w-full md:w-64 lg:w-80 group">
-                    <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-coffee-400 group-focus-within:text-coffee-800 transition-colors" />
+                    <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-coffee-400 group-focus-within:text-coffee-800 dark:group-focus-within:text-white transition-colors" />
                     <input
                         type="text"
                         placeholder="Search specific roasts..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 bg-coffee-50 dark:bg-coffee-900 border-2 border-transparent focus:border-coffee-200 dark:focus:border-coffee-800 rounded-xl sm:rounded-2xl outline-none transition-all dark:text-white font-medium text-sm"
+                        className="w-full pl-11 pr-4 py-3 liquid-glass-high rounded-xl sm:rounded-2xl outline-none transition-all dark:text-white font-medium text-sm focus:shadow-lg"
                     />
                 </div>
 
                 <div className="relative w-full sm:w-auto">
                     <button 
                         onClick={() => setIsFilterOpen(!isFilterOpen)}
-                        className="w-full sm:w-44 lg:w-48 px-5 py-3 bg-coffee-800 dark:bg-coffee-100 text-white dark:text-coffee-900 rounded-xl sm:rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-widest flex items-center justify-between gap-2 shadow-lg"
+                        className="w-full sm:w-44 lg:w-48 px-5 py-3 bg-coffee-950 dark:bg-white text-white dark:text-coffee-950 rounded-xl sm:rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-widest flex items-center justify-between gap-2 shadow-xl hover:scale-105 active:scale-95 transition-all"
                     >
                         <span className="truncate">{selectedLang}</span>
                         <ChevronDown size={14} className={`transition-transform duration-300 flex-shrink-0 ${isFilterOpen ? 'rotate-180' : ''}`} />
@@ -88,13 +114,13 @@ const RepoGrid: React.FC<RepoGridProps> = ({ repos, pinnedRepos, tags }) => {
                                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-coffee-900 border border-coffee-200 dark:border-coffee-800 rounded-xl sm:rounded-2xl shadow-2xl z-50 overflow-hidden max-h-64 overflow-y-auto no-scrollbar"
+                                className="absolute top-full left-0 right-0 mt-2 liquid-glass-high rounded-xl sm:rounded-2xl shadow-2xl z-50 overflow-hidden max-h-64 overflow-y-auto no-scrollbar"
                             >
                                 {languages.map(lang => (
                                     <button
                                         key={lang}
                                         onClick={() => handleLangChange(lang)}
-                                        className="w-full text-left px-5 py-3 text-[10px] sm:text-xs font-black uppercase tracking-widest hover:bg-coffee-50 dark:hover:bg-coffee-800 transition-colors text-coffee-700 dark:text-coffee-300"
+                                        className="w-full text-left px-5 py-3 text-[10px] sm:text-xs font-black uppercase tracking-widest hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-coffee-700 dark:text-coffee-300"
                                     >
                                         {lang}
                                     </button>
@@ -106,69 +132,140 @@ const RepoGrid: React.FC<RepoGridProps> = ({ repos, pinnedRepos, tags }) => {
             </div>
         </div>
 
-        {currentPage === 1 && pinnedRepos.length > 0 && selectedLang === 'All Roasts' && searchTerm === '' && (
+        {/* Active Filters Display */}
+        <AnimatePresence>
+          {(selectedTopic || selectedLang !== 'All Roasts' || searchTerm) && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="flex flex-wrap items-center gap-3 mb-10 overflow-hidden"
+            >
+              <span className="text-[10px] font-black uppercase tracking-widest text-coffee-400 mr-2">Filters:</span>
+              
+              {selectedTopic && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-coffee-950 dark:bg-white text-white dark:text-coffee-950 rounded-full text-[10px] font-black uppercase tracking-widest shadow-md">
+                  <Tag size={12} />
+                  {selectedTopic}
+                  <button onClick={() => setSelectedTopic(null)}><X size={12} /></button>
+                </div>
+              )}
+
+              {selectedLang !== 'All Roasts' && (
+                <div className="flex items-center gap-2 px-3 py-1.5 liquid-glass-high text-coffee-700 dark:text-coffee-300 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm">
+                  {selectedLang}
+                  <button onClick={() => setSelectedLang('All Roasts')}><X size={12} /></button>
+                </div>
+              )}
+
+              <button 
+                onClick={clearFilters}
+                className="text-[10px] font-black uppercase tracking-widest text-coffee-400 hover:text-coffee-950 dark:hover:text-white transition-colors underline underline-offset-4"
+              >
+                Clear all
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {currentPage === 1 && pinnedRepos.length > 0 && selectedLang === 'All Roasts' && !searchTerm && !selectedTopic && (
           <div className="mb-16 md:mb-20">
             <div className="flex items-center gap-4 mb-8 md:mb-10">
               <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.4em] text-coffee-400 whitespace-nowrap">Signature Series</h3>
-              <div className="h-px flex-1 bg-coffee-100 dark:bg-coffee-900" />
+              <div className="h-px flex-1 bg-coffee-200 dark:bg-white/10" />
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10">
+            <motion.div 
+              variants={gridContainerVariants}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10"
+            >
               {pinnedRepos.map(repo => (
-                  <RepoCard key={`pin-${repo.name}`} repo={repo} isPinned={true} tag={tags[repo.name]} />
+                  <motion.div key={`pin-${repo.name}`} variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}>
+                      <RepoCard 
+                        repo={repo} 
+                        isPinned={true} 
+                        onTopicClick={handleTopicClick} 
+                        selectedTopic={selectedTopic}
+                      />
+                  </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         )}
 
         <div className="mb-10 md:mb-12">
           <div className="flex items-center gap-4 mb-8 md:mb-10">
             <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.4em] text-coffee-400 whitespace-nowrap">Seasonal Blends</h3>
-            <div className="h-px flex-1 bg-coffee-100 dark:bg-coffee-900" />
+            <div className="h-px flex-1 bg-coffee-200 dark:bg-white/10" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-              <AnimatePresence mode="popLayout">
+          <motion.div 
+            variants={gridContainerVariants}
+            initial="hidden"
+            animate="visible"
+            // Key change triggers re-animation on filter/page change
+            key={`${currentPage}-${searchTerm}-${selectedLang}-${selectedTopic}`}
+            className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10"
+          >
+             <AnimatePresence mode='popLayout'>
                 {currentRepos.map((repo, idx) => (
                     <motion.div
                       key={repo.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ delay: idx * 0.05 }}
+                      layout="position"
+                      variants={{ 
+                          hidden: { opacity: 0, scale: 0.9, y: 20 }, 
+                          visible: { opacity: 1, scale: 1, y: 0 } 
+                      }}
+                      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
                     >
-                      <RepoCard repo={repo} tag={tags[repo.name]} />
+                      <RepoCard 
+                        repo={repo} 
+                        onTopicClick={handleTopicClick} 
+                        selectedTopic={selectedTopic}
+                      />
                     </motion.div>
                 ))}
-              </AnimatePresence>
-          </div>
+             </AnimatePresence>
+          </motion.div>
         </div>
 
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-5 sm:gap-8 py-10 md:py-12">
-            <button 
+            <motion.button 
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               disabled={currentPage === 1}
               onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({top: 0, behavior: 'smooth'}); }}
-              className="p-3 sm:p-4 bg-coffee-100 dark:bg-coffee-900 text-coffee-800 dark:text-coffee-200 rounded-full disabled:opacity-30 hover:scale-110 transition-all shadow-md active:scale-90"
+              className="p-3 sm:p-4 liquid-glass-high text-coffee-800 dark:text-coffee-200 rounded-full disabled:opacity-30 shadow-lg"
             >
               <ChevronLeft size={20} className="sm:w-6 sm:h-6" />
-            </button>
+            </motion.button>
             <div className="text-center font-display flex items-baseline gap-1">
                 <span className="text-xl sm:text-2xl font-black text-coffee-900 dark:text-coffee-100">{currentPage}</span>
                 <span className="text-coffee-300">/</span>
                 <span className="text-xl sm:text-2xl font-black text-coffee-400">{totalPages}</span>
             </div>
-            <button 
+            <motion.button 
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               disabled={currentPage === totalPages}
               onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({top: 0, behavior: 'smooth'}); }}
-              className="p-3 sm:p-4 bg-coffee-100 dark:bg-coffee-900 text-coffee-800 dark:text-coffee-200 rounded-full disabled:opacity-30 hover:scale-110 transition-all shadow-md active:scale-90"
+              className="p-3 sm:p-4 liquid-glass-high text-coffee-800 dark:text-coffee-200 rounded-full disabled:opacity-30 shadow-lg"
             >
               <ChevronRight size={20} className="sm:w-6 sm:h-6" />
-            </button>
+            </motion.button>
           </div>
         )}
 
         {filteredOthers.length === 0 && (
           <div className="text-center py-24 md:py-40">
              <p className="text-lg sm:text-xl font-display text-coffee-400 uppercase tracking-widest font-black px-4">Cellar search returned no matches.</p>
+             <button 
+               onClick={clearFilters}
+               className="mt-6 text-sm font-black uppercase tracking-widest text-coffee-600 dark:text-coffee-300 underline underline-offset-8"
+             >
+               Reset archive view
+             </button>
           </div>
         )}
       </div>
