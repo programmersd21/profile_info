@@ -255,7 +255,7 @@ const App: React.FC = () => {
                  whileInView={{ opacity: 1, y: 0 }}
                  className="font-serif italic text-coffee-950/20 dark:text-white/20 text-5xl md:text-7xl mb-6 tracking-tighter"
                >
-                 programmersd
+                 programmersd21
                </motion.p>
                <p className="text-[10px] tracking-[0.6em] font-black uppercase mb-12 text-coffee-500">
                  Brewed with pure intent &copy; {new Date().getFullYear()}
