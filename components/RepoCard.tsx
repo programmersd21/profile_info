@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, GitFork, GitBranch, ChevronDown, Sparkles, ExternalLink, CircleDot, Loader2, Copy, Check, BarChart2 } from 'lucide-react';
+import { Star, GitFork, GitBranch, ChevronDown, Sparkles, ExternalLink, CircleDot, Loader2, Copy, Check, BarChart2, Coffee } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
