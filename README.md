@@ -1,6 +1,4 @@
-<div align="center">
 ![GHBanner](https://ai.google.dev/static/site-assets/images/share-ais-513315318.png)
-</div>
 
 # Run and deploy your AI Studio app
 
