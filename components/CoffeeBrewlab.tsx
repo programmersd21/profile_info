@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coffee, Thermometer, Clock, Zap, Shield, RotateCcw, Heart, Sparkles, Filter, CupSoda } from 'lucide-react';
+import { Coffee, Thermometer, Clock, Zap, Shield, RotateCcw, Heart, Sparkles, Filter, CupSoda, Loader2 } from 'lucide-react';
 
 interface CustomBrew {
   id: string;
