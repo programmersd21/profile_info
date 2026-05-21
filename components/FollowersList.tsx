@@ -132,4 +132,4 @@ const FollowersList: React.FC<FollowersListProps> = ({ followers }) => {
   );
 };
 
-export default FollowersList;
+export default React.memo(FollowersList);

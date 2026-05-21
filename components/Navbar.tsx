@@ -179,4 +179,4 @@ const Navbar: React.FC<NavbarProps> = ({ user, isDark, toggleTheme, currentView,
   );
 };
 
-export default Navbar;
+export default React.memo(Navbar);

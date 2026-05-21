@@ -10,6 +10,7 @@ import ProfileHero from './components/ProfileHero';
 import RepoGrid from './components/RepoGrid';
 import FollowersList from './components/FollowersList';
 import StatsPage from './components/StatsPage';
+import CoffeeBrewlab from './components/CoffeeBrewlab';
 
 const springConfig = { type: "spring", stiffness: 200, damping: 25 };
 
@@ -231,6 +232,7 @@ const App: React.FC = () => {
               {currentView === 'home' && (
                 <motion.div key="home" variants={viewVariants} initial="initial" animate="animate" exit="exit">
                   <ProfileHero user={user} setView={setCurrentView} />
+                  <CoffeeBrewlab />
                   <RepoGrid repos={repos} pinnedRepos={pinnedRepos} tags={tags} />
                 </motion.div>
               )}
@@ -255,7 +257,7 @@ const App: React.FC = () => {
                  whileInView={{ opacity: 1, y: 0 }}
                  className="font-serif italic text-coffee-950/20 dark:text-white/20 text-5xl md:text-7xl mb-6 tracking-tighter"
                >
-                 programmersd21
+                 pro-grammer-SD
                </motion.p>
                <p className="text-[10px] tracking-[0.6em] font-black uppercase mb-12 text-coffee-500">
                  Brewed with pure intent &copy; {new Date().getFullYear()}

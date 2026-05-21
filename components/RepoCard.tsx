@@ -23,6 +23,7 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo, isPinned = false, onTopicClic
   const [loadingReadme, setLoadingReadme] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   const analysis = analyzeRepo(repo);
 
@@ -70,11 +71,29 @@ const RepoCard: React.FC<RepoCardProps> = ({ repo, isPinned = false, onTopicClic
 
         {/* Visual Preview */}
         {repo.repoImage && (
-          <div className="relative h-56 sm:h-64 overflow-hidden">
+          <div className="relative h-56 sm:h-64 overflow-hidden bg-coffee-100 dark:bg-zinc-900">
+            <AnimatePresence mode="popLayout">
+              {!imgLoaded && (
+                <motion.div 
+                  initial={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="absolute inset-0 bg-gradient-to-br from-coffee-100 to-coffee-200 dark:from-zinc-900 dark:to-zinc-850 animate-pulse-slow flex flex-col items-center justify-center text-coffee-400 gap-2"
+                >
+                  <Coffee size={24} className="animate-spin text-coffee-400" />
+                  <span className="text-[8px] font-black tracking-widest uppercase">Decanting Preview...</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
             <motion.img 
               src={repo.repoImage} 
               alt={repo.name} 
-              className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-110"
+              onLoad={() => setImgLoaded(true)}
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{ opacity: imgLoaded ? 1 : 0, scale: imgLoaded ? 1 : 1.05 }}
+              transition={{ duration: 0.6 }}
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-white/90 dark:from-black/80 via-transparent to-transparent" />
             

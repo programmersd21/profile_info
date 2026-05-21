@@ -148,4 +148,4 @@ const ProfileHero: React.FC<ProfileHeroProps> = ({ user, setView }) => {
   );
 };
 
-export default ProfileHero;
+export default React.memo(ProfileHero);

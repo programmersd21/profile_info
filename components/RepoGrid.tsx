@@ -273,4 +273,4 @@ const RepoGrid: React.FC<RepoGridProps> = ({ repos, pinnedRepos, tags }) => {
   );
 };
 
-export default RepoGrid;
+export default React.memo(RepoGrid);

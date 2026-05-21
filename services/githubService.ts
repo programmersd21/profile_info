@@ -2,7 +2,7 @@
 import { GitHubRepo, GitHubUser, CoffeeStats } from '../types';
 
 const CONFIG = {
-  USERNAME: 'programmersd21',
+  USERNAME: 'pro-grammer-SD',
   API_BASE: 'https://api.github.com',
   PINNED_API: 'https://pinned.berrysauce.dev/get',
   CACHE_KEY: 'gh_portfolio_v4',
