@@ -77,7 +77,7 @@ const RepoGrid: React.FC<RepoGridProps> = ({ repos, pinnedRepos, tags }) => {
         
         <div className="flex flex-col md:flex-row justify-between items-center md:items-start mb-12 md:mb-16 gap-8 md:gap-10">
             <div className="text-center md:text-left w-full md:w-auto" id="archive-title">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 liquid-glass-high text-coffee-700 dark:text-coffee-300 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-tighter mb-4 shadow-sm">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 liquid-glass-high text-coffee-700 dark:text-coffee-300 rounded-full font-display text-[10px] sm:text-xs font-black uppercase tracking-widest mb-4 shadow-sm">
                   <Sparkles size={14} />
                   <span>Curated Collections</span>
                 </div>
@@ -141,10 +141,10 @@ const RepoGrid: React.FC<RepoGridProps> = ({ repos, pinnedRepos, tags }) => {
               exit={{ opacity: 0, height: 0 }}
               className="flex flex-wrap items-center gap-3 mb-10 overflow-hidden"
             >
-              <span className="text-[10px] font-black uppercase tracking-widest text-coffee-400 mr-2">Filters:</span>
+              <span className="text-[10px] font-display font-black uppercase tracking-widest text-coffee-400 mr-2">Filters:</span>
               
               {selectedTopic && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-coffee-950 dark:bg-white text-white dark:text-coffee-950 rounded-full text-[10px] font-black uppercase tracking-widest shadow-md">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-coffee-950 dark:bg-white text-white dark:text-coffee-950 rounded-full font-display text-[10px] font-black uppercase tracking-widest shadow-md">
                   <Tag size={12} />
                   {selectedTopic}
                   <button onClick={() => setSelectedTopic(null)}><X size={12} /></button>
@@ -152,7 +152,7 @@ const RepoGrid: React.FC<RepoGridProps> = ({ repos, pinnedRepos, tags }) => {
               )}
 
               {selectedLang !== 'All Roasts' && (
-                <div className="flex items-center gap-2 px-3 py-1.5 liquid-glass-high text-coffee-700 dark:text-coffee-300 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm">
+                <div className="flex items-center gap-2 px-3 py-1.5 liquid-glass-high text-coffee-700 dark:text-coffee-300 rounded-full font-display text-[10px] font-black uppercase tracking-widest shadow-sm">
                   {selectedLang}
                   <button onClick={() => setSelectedLang('All Roasts')}><X size={12} /></button>
                 </div>
@@ -160,7 +160,7 @@ const RepoGrid: React.FC<RepoGridProps> = ({ repos, pinnedRepos, tags }) => {
 
               <button 
                 onClick={clearFilters}
-                className="text-[10px] font-black uppercase tracking-widest text-coffee-400 hover:text-coffee-950 dark:hover:text-white transition-colors underline underline-offset-4"
+                className="text-[10px] font-display font-black uppercase tracking-widest text-coffee-400 hover:text-coffee-950 dark:hover:text-white transition-colors underline underline-offset-4"
               >
                 Clear all
               </button>
@@ -171,7 +171,7 @@ const RepoGrid: React.FC<RepoGridProps> = ({ repos, pinnedRepos, tags }) => {
         {currentPage === 1 && pinnedRepos.length > 0 && selectedLang === 'All Roasts' && !searchTerm && !selectedTopic && (
           <div className="mb-16 md:mb-20">
             <div className="flex items-center gap-4 mb-8 md:mb-10">
-              <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.4em] text-coffee-400 whitespace-nowrap">Signature Series</h3>
+              <h3 className="text-[10px] sm:text-xs font-display font-black uppercase tracking-[0.4em] text-coffee-400 whitespace-nowrap">Signature Series</h3>
               <div className="h-px flex-1 bg-coffee-200 dark:bg-white/10" />
             </div>
             <motion.div 
@@ -196,7 +196,7 @@ const RepoGrid: React.FC<RepoGridProps> = ({ repos, pinnedRepos, tags }) => {
 
         <div className="mb-10 md:mb-12">
           <div className="flex items-center gap-4 mb-8 md:mb-10">
-            <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.4em] text-coffee-400 whitespace-nowrap">Seasonal Blends</h3>
+            <h3 className="text-[10px] sm:text-xs font-display font-black uppercase tracking-[0.4em] text-coffee-400 whitespace-nowrap">Seasonal Blends</h3>
             <div className="h-px flex-1 bg-coffee-200 dark:bg-white/10" />
           </div>
           <motion.div 

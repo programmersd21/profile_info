@@ -43,7 +43,7 @@ const FollowersList: React.FC<FollowersListProps> = ({ followers }) => {
           <div>
             <motion.div 
               initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-3 text-coffee-500 font-mono text-sm tracking-widest uppercase mb-4"
+              className="flex items-center gap-3 text-coffee-500 font-display text-xs font-black tracking-widest uppercase mb-4"
             >
               <UserCheck size={16} />
               <span>Patron Registry</span>
@@ -63,7 +63,7 @@ const FollowersList: React.FC<FollowersListProps> = ({ followers }) => {
               placeholder="Search registry..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="bg-transparent outline-none w-full text-sm font-black uppercase tracking-widest placeholder:text-coffee-400 dark:text-white"
+              className="bg-transparent outline-none w-full font-display text-xs font-black uppercase tracking-widest placeholder:text-coffee-400 dark:text-white"
             />
           </div>
         </div>
@@ -97,7 +97,7 @@ const FollowersList: React.FC<FollowersListProps> = ({ followers }) => {
                     </div>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] font-black text-coffee-400 uppercase tracking-widest mb-1">ID #{patron.id.toString().slice(-4)}</p>
+                    <p className="text-[10px] font-display font-black text-coffee-400 uppercase tracking-widest mb-1">ID #{patron.id.toString().slice(-4)}</p>
                     <h4 className="text-xl font-serif font-black italic text-coffee-950 dark:text-white truncate">@{patron.login}</h4>
                   </div>
                 </div>
@@ -111,7 +111,7 @@ const FollowersList: React.FC<FollowersListProps> = ({ followers }) => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     href={patron.html_url} target="_blank"
-                    className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-coffee-600 dark:text-coffee-300 border border-coffee-950/10 dark:border-white/10 px-5 py-2.5 rounded-2xl hover:bg-coffee-950 hover:text-white dark:hover:bg-white dark:hover:text-coffee-950 transition-colors"
+                    className="flex items-center gap-2 font-display text-[9px] font-black uppercase tracking-widest text-coffee-600 dark:text-coffee-300 border border-coffee-950/10 dark:border-white/10 px-5 py-2.5 rounded-2xl hover:bg-coffee-950 hover:text-white dark:hover:bg-white dark:hover:text-coffee-950 transition-colors"
                   >
                     Investigate
                     <ArrowUpRight size={14} />
@@ -124,7 +124,7 @@ const FollowersList: React.FC<FollowersListProps> = ({ followers }) => {
       ) : (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-40">
           <Coffee size={48} className="mx-auto text-coffee-200 mb-6 animate-bounce" />
-          <h3 className="text-2xl font-black text-coffee-300 uppercase tracking-widest">Patron Not Found</h3>
+          <h3 className="text-xl font-display font-black text-coffee-300 uppercase tracking-widest">Patron Not Found</h3>
           <p className="text-sm text-coffee-400 font-serif italic mt-2">The registry contains no records matching this query.</p>
         </motion.div>
       )}

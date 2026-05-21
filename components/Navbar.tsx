@@ -72,7 +72,7 @@ const Navbar: React.FC<NavbarProps> = ({ user, isDark, toggleTheme, currentView,
             <h1 className="font-black text-sm tracking-tight text-coffee-950 dark:text-white leading-none mb-1">
               {user?.login || 'Grinding...'}
             </h1>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-coffee-500 dark:text-coffee-400">Master Roaster</p>
+            <p className="text-[10px] font-display font-black uppercase tracking-[0.2em] text-coffee-500 dark:text-coffee-400">Master Roaster</p>
           </div>
         </motion.div>
 
@@ -83,7 +83,7 @@ const Navbar: React.FC<NavbarProps> = ({ user, isDark, toggleTheme, currentView,
                       key={link.label}
                       variants={itemVariants}
                       onClick={link.action}
-                      className={`relative px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.3em] transition-all flex items-center gap-2.5 group overflow-hidden ${link.active ? 'text-white dark:text-coffee-950' : 'text-coffee-600 dark:text-coffee-300 hover:text-coffee-950 dark:hover:text-white'}`}
+                      className={`relative px-6 py-3 rounded-full font-display text-[10px] font-black uppercase tracking-[0.3em] transition-all flex items-center gap-2.5 group overflow-hidden ${link.active ? 'text-white dark:text-coffee-950' : 'text-coffee-600 dark:text-coffee-300 hover:text-coffee-950 dark:hover:text-white'}`}
                   >
                     {link.active && (
                       <motion.div 
@@ -153,7 +153,7 @@ const Navbar: React.FC<NavbarProps> = ({ user, isDark, toggleTheme, currentView,
                         <button
                             key={link.label}
                             onClick={link.action}
-                            className={`w-full flex items-center gap-5 px-8 py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.4em] transition-all ${
+                            className={`w-full flex items-center gap-5 px-8 py-5 rounded-[2rem] font-display text-[11px] font-black uppercase tracking-[0.4em] transition-all ${
                                 link.active 
                                 ? 'bg-coffee-950 dark:bg-white text-white dark:text-coffee-950 shadow-lg' 
                                 : 'text-coffee-600 dark:text-coffee-400 hover:bg-white/20'
@@ -166,7 +166,7 @@ const Navbar: React.FC<NavbarProps> = ({ user, isDark, toggleTheme, currentView,
                     <a 
                       href={`https://github.com/${user?.login}`} 
                       target="_blank" 
-                      className="w-full flex items-center gap-5 px-8 py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.4em] text-coffee-400 border border-coffee-950/10 dark:border-white/10 mt-6 hover:bg-white/20"
+                      className="w-full flex items-center gap-5 px-8 py-5 rounded-[2rem] font-display text-[11px] font-black uppercase tracking-[0.4em] text-coffee-400 border border-coffee-950/10 dark:border-white/10 mt-6 hover:bg-white/20"
                     >
                       <Github size={20} strokeWidth={3} />
                       Source

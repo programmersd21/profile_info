@@ -81,19 +81,19 @@ const ProfileHero: React.FC<ProfileHeroProps> = ({ user, setView }) => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setView('stats')} 
-                className="bg-coffee-950 dark:bg-white text-white dark:text-coffee-950 p-6 rounded-[2rem] text-center shadow-2xl transition-all group"
+                className="bg-coffee-950 dark:bg-white text-white dark:text-coffee-950 p-6 rounded-[2rem] text-center shadow-2xl transition-all group animate-[fadeIn_0.5s_ease-out]"
               >
-                <span className="block text-3xl font-black mb-1">{user.public_repos}</span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-coffee-400 group-hover:text-coffee-500 transition-colors">Vintages</span>
+                <span className="block text-3xl font-display font-black mb-1">{user.public_repos}</span>
+                <span className="text-[10px] font-display font-black uppercase tracking-widest text-coffee-400 group-hover:text-coffee-500 transition-colors">Vintages</span>
               </motion.button>
               <motion.button 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setView('followers')} 
-                className="liquid-glass p-6 rounded-[2rem] text-center shadow-lg transition-all group"
+                className="liquid-glass p-6 rounded-[2rem] text-center shadow-lg transition-all group animate-[fadeIn_0.5s_ease-out_0.1s_both]"
               >
-                <span className="block text-3xl font-black mb-1">{user.followers}</span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-coffee-500 dark:text-coffee-400 group-hover:text-coffee-700 transition-colors">Patrons</span>
+                <span className="block text-3xl font-display font-black mb-1">{user.followers}</span>
+                <span className="text-[10px] font-display font-black uppercase tracking-widest text-coffee-500 dark:text-coffee-400 group-hover:text-coffee-700 transition-colors">Patrons</span>
               </motion.button>
             </div>
           </motion.div>
@@ -107,7 +107,7 @@ const ProfileHero: React.FC<ProfileHeroProps> = ({ user, setView }) => {
               <header className="flex items-center justify-between mb-12">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-px bg-coffee-400" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-coffee-500 dark:text-coffee-400">Master Roaster's Manifesto</span>
+                  <span className="text-[10px] font-display font-black uppercase tracking-[0.4em] text-coffee-500 dark:text-coffee-400">Master Roaster's Manifesto</span>
                 </div>
                 <ArrowDownRight className="text-coffee-400" size={24} />
               </header>
@@ -125,7 +125,7 @@ const ProfileHero: React.FC<ProfileHeroProps> = ({ user, setView }) => {
                   ) : (
                     <div className="h-64 flex flex-col items-center justify-center opacity-40">
                       <Coffee className="animate-spin mb-4" />
-                      <p className="text-[10px] font-black uppercase tracking-widest">Decanting Manifesto...</p>
+                      <p className="text-[10px] font-display font-black uppercase tracking-widest">Decanting Manifesto...</p>
                     </div>
                   )}
                 </motion.div>
@@ -135,7 +135,7 @@ const ProfileHero: React.FC<ProfileHeroProps> = ({ user, setView }) => {
                 whileHover={{ scale: 1.01, backgroundColor: "rgba(255,255,255,0.6)" }}
                 whileTap={{ scale: 0.99 }}
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="mt-12 w-full py-6 liquid-glass-high transition-colors rounded-3xl text-[10px] font-black uppercase tracking-[0.3em] text-coffee-500 dark:text-coffee-300 flex items-center justify-center gap-3 shadow-lg"
+                className="mt-12 w-full py-6 liquid-glass-high transition-colors rounded-3xl text-[10px] font-display font-black uppercase tracking-[0.3em] text-coffee-500 dark:text-coffee-300 flex items-center justify-center gap-3 shadow-lg"
               >
                 {isExpanded ? 'Conceal Archive' : 'Extract Full Narrative'}
                 <ChevronDown className={`transition-transform duration-500 ${isExpanded ? 'rotate-180' : ''}`} />
